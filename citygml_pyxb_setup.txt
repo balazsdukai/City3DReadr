@@ -1,0 +1,11 @@
+1. Download the source of PyXB from sourceforge and extract it somewhere.
+2. Add the path to the unpacked PyXB to the `PYXB_ROOT` environement variable by adding `export PYXB_ROOT=/.../pyxb-source-folder` to `~/.basharc`. It is important to permanently add the environement variable otherwise pyxb does not recognize it.
+3. The CityGML (and OpenGIS) schemas and bindings are not included in the PyXB distribution, because they take up too much space. But it can download the schemas and generate the bindings. However, PyXB generates CityGML1.0 by default, thus the bindings-generator-script needs some adjustment. So copy `genbind_citygml2_0` to `pyxb_source_folder/pyxb/bundles/opengis/scripts/`.
+4. Then excecute the follwing to generate the bindings. You'll probably need to use `sudo`
+
+```
+cd ${PYXB_ROOT}
+pyxb/bundles/opengis/scripts/genbind_citygml2_0
+python3 setup.py install
+```
+

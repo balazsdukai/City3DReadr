@@ -7,10 +7,16 @@ import subprocess
 import numpy as np
 from geo_primitives import *
 import semantic_check
+from zmq.utils.constant_names import ctx_opt_names
 
-def grep(file,arg):
-    process = subprocess.Popen(['grep','-c',arg,file],stdout=subprocess.PIPE)
-    stdout,stderr = process.communicate()
+"""
+Input has to have extenstion .gml
+TODO: make it xml/gml
+"""
+
+def grep(file, arg):
+    process = subprocess.Popen(['grep', '-c', arg, file], stdout=subprocess.PIPE)
+    stdout, stderr = process.communicate()
     return stdout
 
 def clear_element(elem):
@@ -20,15 +26,15 @@ def clear_element(elem):
 
 def parse_polygon(poly):
     global nsmap
-    #global vertices
+    # global vertices
     rings = poly.getchildren()
     polyrings = []
     for ring in rings:
-        poly_ring=[]
+        poly_ring = []
         posList = ring.find('.//{%s}posList' % nsmap["gml"])
         if posList != None:
-            pos_list = np.array(posList.text.split(),dtype=np.float64)
-            pos_list = pos_list.reshape(len(pos_list)/3,3)[:-1]
+            pos_list = np.array(posList.text.split(), dtype=np.float64)
+            pos_list = pos_list.reshape(len(pos_list) / 3, 3)[:-1]
             # try:
             #     for pos in pos_list.tolist():
             #         if pos in vertices:
@@ -50,41 +56,51 @@ def parse_polygon(poly):
                 #     poly_ring.append(len(vertices))
                 #     vertices.append(pos)
                 poly_ring.append(pos)
-        ring_role = ring.tag[len(nsmap["gml"])+2:]
-        if ring_role=='exterior':
-            polyrings.insert(0,poly_ring)
+        ring_role = ring.tag[len(nsmap["gml"]) + 2:]
+        if ring_role == 'exterior':
+            polyrings.insert(0, poly_ring)
         else:
             polyrings.append(poly_ring)
     return polyrings
 
+# path = "/home/bdukai/Data/CityGML/LoerrachCityGML2_0/loerrach_sub1/loerrach_sub1_repaired.xml"
+# ctx = etree.iterparse(path, events=('start', 'end'))
+# # the text, tail, and children of an Element are not necessarily present yet
+# # when receiving the start event. Only the end event guarantees 
+# # that the Element has been parsed completely
+# context = ctx
+# element = "Building"
+# 
+# "{http://www.opengis.net/citygml/appearance/2.0}" % nsmap["bldg"]
 
-def iter_parse(context,element):
+def iter_parse(context, element):
     global nsmap
-    #global vertices
+    # global vertices
     global surfaces
     global buildings
     if element == "Building":
         countBuilding = 0
-        for event,elem in context:
-            if event=='end' and elem.tag == "{%s}%s" % (nsmap["bldg"],element):
+        for event, elem in context:
+            if event == 'end' \
+             and elem.tag == "{%s}%s" % (nsmap["bldg"], element):
                 building = Building()
-                countBuilding+=1
-                idBuilding="NULL"
+                countBuilding += 1
+                idBuilding = "NULL"
                 if "{%s}id" % nsmap["gml"] in elem.attrib:
-                    idBuilding=elem.attrib["{%s}id" % nsmap["gml"]]
+                    idBuilding = elem.attrib["{%s}id" % nsmap["gml"]]
                 building.fid = idBuilding
-                #Roof=elem.findall('.//{%s}RoofSurface' % nsmap["bldg"])
+                # Roof=elem.findall('.//{%s}RoofSurface' % nsmap["bldg"])
                 boundedBys = elem.findall('.//{%s}boundedBy' % nsmap["bldg"])
-                if len(boundedBys)==0:continue
+                if len(boundedBys) == 0: continue
                 for bB in boundedBys:
-                    gm_surface=bB.getchildren()[0]
-                    role=gm_surface.tag[len(nsmap["bldg"])+2:]
-                    gm_surfaceid="NULL"
+                    gm_surface = bB.getchildren()[0]
+                    role = gm_surface.tag[len(nsmap["bldg"]) + 2:]
+                    gm_surfaceid = "NULL"
                     if "{%s}id" % nsmap["gml"] in gm_surface.attrib:
                         gm_surfaceid = gm_surface.attrib["{%s}id" % nsmap["gml"]]
                     polys = gm_surface.findall('.//{%s}Polygon' % nsmap["gml"])
                     for poly in polys:
-                        polyid=gm_surfaceid
+                        polyid = gm_surfaceid
                         if "{%s}id" % nsmap["gml"] in poly.attrib:
                             polyid = poly.attrib["{%s}id" % nsmap["gml"]]
                         polyrings = parse_polygon(poly)
@@ -93,7 +109,7 @@ def iter_parse(context,element):
                         surf.polyid = polyid
                         surf.role = role
                         surfaces.append(surf)
-                        building.surfaces.append(len(surfaces)-1)
+                        building.surfaces.append(len(surfaces) - 1)
                 # Wall=elem.findall('.//{%s}WallSurface' % nsmap["bldg"])
                 # for wall in Wall:
                 #     wallpolys = wall.findall('.//{%s}Polygon' % nsmap["gml"])
@@ -112,7 +128,7 @@ def building(infile):
 #         infile = sys.argv[1]
 #     else:
 #         infile = "/Users/octeufer/OneDrive/3DGeo/Dataset/Friedrichshain-Kreuzberg/citygml.gml"
-    if int(grep(infile,"citygml/2.0"))>0:
+    if int(grep(infile, "citygml/2.0")) > 0:
         ns_citygml = "http://www.opengis.net/citygml/2.0"
         ns_gml = "http://www.opengis.net/gml"
         ns_bldg = "http://www.opengis.net/citygml/building/2.0"
@@ -144,7 +160,7 @@ def building(infile):
         ns_wtr = "http://www.opengis.net/citygml/waterbody/2.0"
         ns_brid = "http://www.opengis.net/citygml/bridge/2.0"
         ns_app = "http://www.opengis.net/citygml/appearance/2.0"
-    nsmap={
+    nsmap = {
         None : ns_citygml,
         'gml': ns_gml,
         'bldg': ns_bldg,
@@ -160,23 +176,26 @@ def building(infile):
         'brid': ns_brid,
         'app' : ns_app
         }
-    context = etree.iterparse(infile, events=('start','end'))
-    count = iter_parse(context,"Building")
-    #global vertices
-    #vertices = np.array(vertices)
+    context = etree.iterparse(infile, events=('start', 'end'))
+    count = iter_parse(context, "Building")  # TODO: make this "Building switch controllable"
+    # global vertices
+    # vertices = np.array(vertices)
     print("Surfaces: %d" % len(surfaces))
     print("Buildings: %d" % count)
-    #global gses
-    #gses = surfaces
+    # global gses
+    # gses = surfaces
 #     if count>0:
 #         semantic_check.val_report(buildings,surfaces,sys.argv[2])
     return count
 
-#gses=()
-nsmap={}
-vertices=[]
-surfaces=[]
-buildings=[]
+# gses=()
+nsmap = {}
+vertices = []
+surfaces = []
+buildings = []
 
-# if __name__ == "__main__":
-#     main()
+# path = "/home/bdukai/Data/CityGML/LoerrachCityGML2_0/loerrach_sub1/loerrach_sub1_repaired.gml"
+# ctx = etree.iterparse(path, events=('start', 'end'))
+# 
+# cnt = iter_parse(ctx, "Building")
+

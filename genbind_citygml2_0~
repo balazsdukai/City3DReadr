@@ -88,7 +88,6 @@ ${SCHEMA_DIR}/citygml/cityobjectgroup/2.0/cityObjectGroup.xsd citygml.cityObject
 ${SCHEMA_DIR}/citygml/generics/2.0/generics.xsd citygml.generics
 ${SCHEMA_DIR}/citygml/landuse/2.0/landUse.xsd citygml.landUse
 ${SCHEMA_DIR}/citygml/relief/2.0/relief.xsd citygml.relief
-${SCHEMA_DIR}/citygml/schematron/2.0/referentialIntegrity.sch citygml.refintegrity
 ${SCHEMA_DIR}/citygml/texturedsurface/2.0/texturedSurface.xsd citygml.texturedSurface
 ${SCHEMA_DIR}/citygml/transportation/2.0/transportation.xsd citygml.transportation
 ${SCHEMA_DIR}/citygml/tunnel/2.0/tunnel.xsd citygml.tunnel

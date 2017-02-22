@@ -34,7 +34,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 '''
 # import polygon3dmodule
-import markup3dmodule
+from City3DReadr import markup3dmodule
 from lxml import etree
 
 def remove_reccuring(list_vertices):

@@ -33,7 +33,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 '''
-# import polygon3dmodule
+from City3DReadr import geometry_primitives as geom
 from City3DReadr import markup3dmodule
 from lxml import etree
 
@@ -89,9 +89,6 @@ def extract_polygons(bldg_BoundarySurface):
 
 # Variables imitating user input (legacy of CityGML2OBJs)
 FULLPATH = "/home/bdukai/Data/synthetic_LoD_thesis/city_100/LOD2_3_F0_copy.xml"
-SEMANTICS = True
-OBJECTS = False # Writes all buildings in one group (False) or or multiple groups (True)
-SKIPTRI = False # Skip the triangulation (preserve polygons)
 
 # Reading and parsing the CityGML file(s)
 CITYGML = etree.parse(FULLPATH)
@@ -156,39 +153,6 @@ nsmap = {
 # Empty lists for cityobjects and buildings
 cityObjects = []
 buildings = []
-other = []
-
-#  This denotes the dictionaries in which the surfaces are put.
-output = {}
-vertices_output = {}
-face_output = {}
-
-# This denotes the dictionaries in which all surfaces are put. It is later ignored in the semantic option was invoked.
-output['All'] = []
-# output['All'].append(header)
-vertices_output['All'] = []
-face_output['All'] = []
-
-# If the semantic option was invoked, this part adds additional dictionaries.
-if SEMANTICS:
-    # Easy to modify list of thematic boundaries
-    semanticSurfaces = ['GroundSurface', 'WallSurface', 'RoofSurface', 'ClosureSurface', 'CeilingSurface', 'InteriorWallSurface', 'FloorSurface', 'OuterCeilingSurface', 'OuterFloorSurface', 'Door', 'Window']
-    for semanticSurface in semanticSurfaces:
-        output[semanticSurface] = []
-        # Add the material library
-        vertices_output[semanticSurface] = []
-        face_output[semanticSurface] = []
-
-
-# Directory of vertices (indexing)
-vertices = {}
-vertices['All'] = []
-if SEMANTICS:
-    for semanticSurface in semanticSurfaces:
-        vertices[semanticSurface] = []
-vertices['Other'] = []
-face_output['Other'] = []
-output['Other'] = []
 
 # Find all instances of cityObjectMember and put them in a list
 for obj in root.getiterator('{%s}cityObjectMember'% ns_citygml):
@@ -203,13 +167,6 @@ if len(cityObjects) > 0:
         for child in cityObject.getchildren():
             if child.tag == '{%s}Building' %ns_bldg:
                 buildings.append(child)
-    for cityObject in cityObjects:
-        for child in cityObject.getchildren():
-            if child.tag == '{%s}Road' %ns_tran or child.tag == '{%s}PlantCover' %ns_veg or \
-            child.tag == '{%s}GenericCityObject' %ns_gen or child.tag == '{%s}CityFurniture' %ns_frn or \
-            child.tag == '{%s}Relief' %ns_dem or child.tag == '{%s}Tunnel' %ns_tun or \
-            child.tag == '{%s}WaterBody' %ns_wtr or child.tag == '{%s}Bridge' %ns_brid:
-                other.append(child)
                 
     print("\tAnalysing objects and extracting the geometry...")
     
@@ -217,28 +174,19 @@ if len(cityObjects) > 0:
     b_counter = 0
     b_total = len(buildings)
     
+    # Initiate core data structure for storing buildings
+    b_ids = []
+    for b in buildings:
+        b_ids.append(b.attrib.values()[0]) # <gml:id> of <bldg:Building>
+    buildings_dict = dict.fromkeys(b_ids)
+    
     # Do each building separately
     for b in buildings:
         
-        b = buildings[0]
+        b_id = b.attrib.values()[0] # <gml:id> of <bldg:Building>
         
-        # Build the local list of vertices to speed up the indexing
-        local_vertices = {}
-        local_vertices['All'] = []
-        if SEMANTICS:
-            for semanticSurface in semanticSurfaces:
-                local_vertices[semanticSurface] = []
-                
         # Increment the building counter
         b_counter += 1
-        
-        # If the object option is on, get the name for each building or create one
-        if OBJECTS:
-            ob = b.xpath("@g:id", namespaces={'g' : ns_gml})
-            if not ob:
-                ob = b_counter
-            else:
-                ob = ob[0]
         
         # Print progress for large files every 1000 buildings.
         if b_counter == 1000:
@@ -247,14 +195,23 @@ if len(cityObjects) > 0:
             print(str(b_counter) + "...")
         elif b_counter > 0 and b_counter % 1000 == 0:
             print(str(b_counter) + "... "),
-        
-        # Add the object identifier
-        if OBJECTS:
-            face_output['All'].append('o ' + str(ob) + '\n')
-
-        # OBJ with all surfaces in the same bin
+            
+        # Get each <gml:Polygon> element
         gml_Polygons = markup3dmodule.polygonFinder(b)
+        # Container for class Polygon
+        polygon_list = []
         # Process each surface
         for poly in gml_Polygons:
             vertex_list = parse_polygon(poly)
+            gid = poly.attrib.values()[0] # <gml:id> of Polygon
+            polygon_list.append(geom.Polygon(vertex_list, gid))
+        
+        # Append all Polygons to the building
+        # Note that this version disregards all semantic info
+        buildings_dict[b_id] = polygon_list
+
+
+
+
+
 

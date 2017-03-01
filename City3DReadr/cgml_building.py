@@ -1,14 +1,12 @@
-'''
+"""
 Created on 21 Feb 2017
 
 @author: Balázs Dukai
 
 
--*- coding: utf-8 -*-
-  
 The MIT License (MIT)
   
-This code is part of the CityGML2OBJs package
+This code is adapted from the CityGML2OBJs package
   
 Copyright (c) 2014 
 Filip Biljecki
@@ -32,7 +30,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
-'''
+"""
 from City3DReadr import geometry_primitives as geom
 from City3DReadr import markup3dmodule
 from lxml import etree
